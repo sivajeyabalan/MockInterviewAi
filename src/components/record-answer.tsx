@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useAuth } from "@/contexts/AuthContext";
 import {
   CircleStop,
@@ -55,6 +54,13 @@ export const RecordAnswer = ({
   } = useSpeechToText({
     continuous: true,
     useLegacyResults: false,
+    speechRecognitionProperties: {
+      interimResults: true,
+      maxAlternatives: 3,
+      grammars: undefined,
+    },
+    timeout: 10000, // 10 seconds timeout
+    crossBrowser: false, // Use native browser API for better performance
   });
 
   const [userAnswer, setUserAnswer] = useState("");
@@ -63,6 +69,11 @@ export const RecordAnswer = ({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [confidence, setConfidence] = useState<number>(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [audioQuality, setAudioQuality] = useState<"good" | "fair" | "poor">(
+    "good"
+  );
 
   const { user } = useAuth();
   const userId = user?.uid;
@@ -74,17 +85,30 @@ export const RecordAnswer = ({
         stopSpeechToText();
       } catch (error) {
         console.error("Error stopping speech recognition:", error);
-      }
-
-      if (userAnswer?.length < 30) {
         toast.error("Error", {
-          description: "Your answer should be more than 30 characters",
+          description: "Failed to stop recording. Please try again.",
         });
-
         return;
       }
 
-      //   ai result
+      // Check if we have enough content
+      if (userAnswer?.length < 30) {
+        toast.error("Answer Too Short", {
+          description:
+            "Your answer should be more than 30 characters. Please try speaking longer.",
+        });
+        return;
+      }
+
+      // Check audio quality
+      if (audioQuality === "poor" && confidence < 0.5) {
+        toast.warning("Low Audio Quality", {
+          description:
+            "Audio quality is poor. Consider re-recording for better results.",
+        });
+      }
+
+      // Generate AI result
       const aiResult = await generateResult(
         question.question,
         question.answer,
@@ -96,14 +120,14 @@ export const RecordAnswer = ({
       // Auto-save the result after AI generation
       if (aiResult && aiResult.ratings > 0) {
         console.log("Auto-saving AI result...", aiResult);
-        console.log("Current interviewId for auto-save:", interviewId);
-        console.log("Current userId for auto-save:", userId);
-        console.log("AI result before save:", aiResult);
         try {
-          await saveUserAnswer(false, aiResult); // Pass aiResult directly
+          await saveUserAnswer(false, aiResult);
           console.log("Auto-save completed successfully");
         } catch (error) {
           console.error("Auto-save failed:", error);
+          toast.error("Save Failed", {
+            description: "Failed to save your answer. Please try again.",
+          });
         }
       } else {
         console.log("Auto-save skipped - no valid AI result:", {
@@ -113,11 +137,18 @@ export const RecordAnswer = ({
       }
     } else {
       try {
+        // Reset states when starting
+        setConfidence(0);
+        setAudioQuality("good");
         startSpeechToText();
+        toast.success("Recording Started", {
+          description: "Speak clearly into your microphone.",
+        });
       } catch (error) {
         console.error("Error starting speech recognition:", error);
-        toast.error("Error", {
-          description: "Failed to start recording. Please try again.",
+        toast.error("Recording Failed", {
+          description:
+            "Failed to start recording. Please check your microphone permissions and try again.",
         });
       }
     }
@@ -130,9 +161,9 @@ export const RecordAnswer = ({
     // Step 2: Remove any occurrences of "json" or code block symbols (``` or `)
     cleanText = cleanText.replace(/(json|```|`)/g, "");
 
-    // Step 3: Remove control characters and normalize whitespace
+    // Step 3: Clean and normalize text
     cleanText = cleanText
-      .replace(/[\x00-\x1F\x7F-\x9F]/g, "") // Remove control characters
+      .replace(/[^\x20-\x7E\s]/g, "") // Remove non-printable characters
       .replace(/\s+/g, " ") // Normalize whitespace
       .trim();
 
@@ -223,7 +254,10 @@ Do not include any other text, explanations, or formatting outside the JSON obje
     startSpeechToText();
   };
 
-  const saveUserAnswer = async (showModal = true, aiResultToSave = null) => {
+  const saveUserAnswer = async (
+    showModal = true,
+    aiResultToSave: AIResponse | null = null
+  ) => {
     setLoading(true);
 
     const resultToSave = aiResultToSave || aiResult;
@@ -316,12 +350,51 @@ Do not include any other text, explanations, or formatting outside the JSON obje
   };
 
   useEffect(() => {
-    const combineTranscripts = results
-      .filter((result): result is ResultType => typeof result !== "string")
-      .map((result) => result.transcript)
-      .join(" ");
+    if (results.length === 0) return;
 
-    setUserAnswer(combineTranscripts);
+    setIsProcessing(true);
+
+    // Process results with confidence scoring and filtering
+    const processedResults = results
+      .filter((result): result is ResultType => typeof result !== "string")
+      .map((result) => ({
+        transcript: result.transcript,
+        confidence: 0.8, // Default confidence since the library doesn't provide it
+        timestamp: result.timestamp || Date.now(),
+      }))
+      .filter((result) => {
+        // Filter out low-confidence results and very short transcripts
+        return result.confidence > 0.3 && result.transcript.trim().length > 2;
+      })
+      .sort((a, b) => a.timestamp - b.timestamp); // Sort by timestamp
+
+    if (processedResults.length > 0) {
+      // Calculate average confidence
+      const avgConfidence =
+        processedResults.reduce((sum, result) => sum + result.confidence, 0) /
+        processedResults.length;
+      setConfidence(avgConfidence);
+
+      // Determine audio quality based on confidence
+      if (avgConfidence > 0.8) {
+        setAudioQuality("good");
+      } else if (avgConfidence > 0.6) {
+        setAudioQuality("fair");
+      } else {
+        setAudioQuality("poor");
+      }
+
+      // Combine transcripts with better spacing
+      const combineTranscripts = processedResults
+        .map((result) => result.transcript.trim())
+        .join(" ")
+        .replace(/\s+/g, " ") // Remove extra spaces
+        .trim();
+
+      setUserAnswer(combineTranscripts);
+    }
+
+    setIsProcessing(false);
   }, [results]);
 
   return (
@@ -396,23 +469,70 @@ Do not include any other text, explanations, or formatting outside the JSON obje
       <div className="w-full mt-4 p-4 border rounded-md bg-gray-50">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-lg font-semibold">Your Answer:</h2>
-          {isSaved && (
-            <div className="flex items-center gap-1 text-green-600 text-sm">
-              <CheckCircle className="h-4 w-4" />
-              <span>Saved</span>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Confidence Indicator */}
+            {isRecording && confidence > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="text-xs text-gray-600">Confidence:</div>
+                <div className="flex items-center gap-1">
+                  <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        confidence > 0.8
+                          ? "bg-green-500"
+                          : confidence > 0.6
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                      }`}
+                      style={{ width: `${confidence * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-600">
+                    {Math.round(confidence * 100)}%
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Processing Indicator */}
+            {isProcessing && (
+              <div className="flex items-center gap-1 text-blue-600 text-sm">
+                <Loader className="h-4 w-4 animate-spin" />
+                <span>Processing...</span>
+              </div>
+            )}
+
+            {isSaved && (
+              <div className="flex items-center gap-1 text-green-600 text-sm">
+                <CheckCircle className="h-4 w-4" />
+                <span>Saved</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <p className="text-sm mt-2 text-gray-700 whitespace-normal">
-          {userAnswer || "Start recording to see your ansewer here"}
+          {userAnswer || "Start recording to see your answer here"}
         </p>
 
-        {interimResult && (
-          <p className="text-sm text-gray-500 mt-2">
-            <strong>Current Speech:</strong>
-            {interimResult}
-          </p>
+        {/* Audio Quality Tips */}
+        {isRecording && audioQuality === "poor" && (
+          <div className="mt-2 p-2 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+            <p className="text-xs text-yellow-600 mb-1">Audio Quality Tips:</p>
+            <ul className="text-xs text-yellow-800 list-disc list-inside space-y-1">
+              <li>Speak closer to your microphone</li>
+              <li>Reduce background noise</li>
+              <li>Speak more clearly and slowly</li>
+            </ul>
+          </div>
+        )}
+
+        {/* Interim Result Display */}
+        {interimResult && interimResult !== userAnswer && (
+          <div className="mt-2 p-2 bg-blue-50 border-l-4 border-blue-400 rounded">
+            <p className="text-xs text-blue-600 mb-1">Listening...</p>
+            <p className="text-sm text-blue-800 italic">{interimResult}</p>
+          </div>
         )}
 
         {aiResult && (
