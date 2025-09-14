@@ -14,7 +14,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import {
   Loader2,
-  Mail,
   Chrome,
   ArrowLeft,
   Eye,

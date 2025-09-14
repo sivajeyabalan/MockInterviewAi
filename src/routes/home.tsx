@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Sparkles, ArrowRight, Users, TrendingUp, Award } from "lucide-react";
+import { ArrowRight, Users, TrendingUp, Award } from "lucide-react";
 import Marquee from "react-fast-marquee";
 
 import { Container } from "@/components/container";

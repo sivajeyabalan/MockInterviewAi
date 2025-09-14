@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { db } from "@/config/firebase.config";
 import { Interview } from "@/types";
 import { doc, getDoc } from "firebase/firestore";
@@ -7,16 +6,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { LoaderPage } from "./loader-page";
 import { CustomBreadCrumb } from "@/components/custom-bread-crumb";
 import { Button } from "@/components/ui/button";
-import {
-  Lightbulb,
-  Sparkles,
-  WebcamIcon,
-  Video,
-  Mic,
-  Play,
-} from "lucide-react";
+import { Lightbulb, WebcamIcon, Video, Mic, Play } from "lucide-react";
 import { InterviewPin } from "@/components/pin";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import WebCam from "react-webcam";
 
 export const MockLoadPage = () => {

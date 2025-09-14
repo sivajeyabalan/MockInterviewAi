@@ -24,6 +24,7 @@ interface TooltipButtonProps {
   onClick: () => void;
   buttonVariant?: ButtonVariant;
   buttonClassName?: string;
+  className?: string; // Add className prop for backward compatibility
   delay?: number;
   disbaled?: boolean;
   loading?: boolean;
@@ -35,6 +36,7 @@ export const TooltipButton = ({
   onClick,
   buttonVariant = "ghost",
   buttonClassName = "",
+  className = "",
   delay = 0,
   disbaled = false,
   loading = false,
@@ -47,7 +49,7 @@ export const TooltipButton = ({
             size={"icon"}
             disabled={disbaled}
             variant={buttonVariant}
-            className={buttonClassName}
+            className={className || buttonClassName}
             onClick={onClick}
           >
             {loading ? (
