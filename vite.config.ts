@@ -14,6 +14,7 @@ export default defineConfig({
     outDir: "dist",
     sourcemap: false,
     minify: "esbuild", // Use esbuild instead of terser to avoid platform issues
+    target: "es2020", // Ensure compatibility
     rollupOptions: {
       output: {
         manualChunks: {
@@ -31,5 +32,8 @@ export default defineConfig({
   preview: {
     port: 3000,
     host: true,
+  },
+  optimizeDeps: {
+    include: ["react", "react-dom"],
   },
 });

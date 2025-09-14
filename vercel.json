@@ -1,8 +1,14 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "dist",
   "framework": "vite",
   "installCommand": "npm ci --prefer-offline --no-audit",
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NODE_OPTIONS": "--max-old-space-size=4096"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
