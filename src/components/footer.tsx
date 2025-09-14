@@ -67,7 +67,9 @@ export const Footer = () => {
                     <Code className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gradient">Sivajeyabalan</h3>
+                    <h3 className="text-xl font-bold text-gradient">
+                      Sivajeyabalan
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       Full Stack Developer
                     </p>
@@ -149,8 +151,8 @@ export const Footer = () => {
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-center md:text-left">
                 <p className="text-muted-foreground text-sm">
-                  © 2024 SivajB. All rights reserved. Built with ❤️ using React
-                  & TypeScript.
+                  2025 © SivajB. All rights reserved. Built with ❤️ using React &
+                  TypeScript.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">

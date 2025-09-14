@@ -26,3 +26,4 @@ dist-ssr
 # enivronment variables
 .env
 .env.*
+.firebase/

@@ -50,6 +50,10 @@ const formSchema = z.object({
     .number()
     .min(0, "Experience cannot be empty or negative"),
   techStack: z.string().min(1, "Tech stack must be at least a character"),
+  questionCount: z.coerce
+    .number()
+    .min(3, "Minimum 3 questions required")
+    .max(10, "Maximum 10 questions allowed"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -57,7 +61,7 @@ type FormData = z.infer<typeof formSchema>;
 export const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: initialData || {},
+    defaultValues: initialData || { questionCount: 5 },
   });
 
   const { isValid, isSubmitting } = form.formState;
@@ -101,7 +105,9 @@ export const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
 
   const generateAiResponse = async (data: FormData) => {
     const prompt = `
-        As an experienced prompt engineer, generate a JSON array containing 5 technical interview questions along with detailed answers based on the following job information. Each object in the array should have the fields "question" and "answer", formatted as follows:
+        As an experienced prompt engineer, generate a JSON array containing ${
+          data?.questionCount || 5
+        } technical interview questions along with detailed answers based on the following job information. Each object in the array should have the fields "question" and "answer", formatted as follows:
 
         [
           { "question": "<Question text>", "answer": "<Answer text>" },
@@ -113,8 +119,11 @@ export const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
         - Job Description: ${data?.description}
         - Years of Experience Required: ${data?.experience}
         - Tech Stacks: ${data?.techStack}
+        - Number of Questions: ${data?.questionCount || 5}
 
-        The questions should assess skills in ${data?.techStack} development and best practices, problem-solving, and experience handling complex requirements. Please format the output strictly as an array of JSON objects without any additional labels, code blocks, or explanations. Return only the JSON array with questions and answers.
+        The questions should assess skills in ${
+          data?.techStack
+        } development and best practices, problem-solving, and experience handling complex requirements. Please format the output strictly as an array of JSON objects without any additional labels, code blocks, or explanations. Return only the JSON array with questions and answers.
         `;
 
     const aiResult = await chatSession.sendMessage(prompt);
@@ -232,6 +241,7 @@ export const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
         description: initialData.description,
         experience: initialData.experience,
         techStack: initialData.techStack,
+        questionCount: initialData.questionCount || 5,
       });
     }
   }, [initialData, form]);
@@ -360,6 +370,34 @@ export const FormMockInterview = ({ initialData }: FormMockInterviewProps) => {
                     />
                   </FormControl>
                   <FormMessage className="text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="questionCount"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel className="text-base font-semibold">
+                    Number of Questions
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="3"
+                      max="10"
+                      className="h-12 text-base"
+                      disabled={loading}
+                      placeholder="e.g., 5"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-sm" />
+                  <p className="text-sm text-muted-foreground">
+                    Choose between 3-10 questions for your mock interview
+                  </p>
                 </FormItem>
               )}
             />

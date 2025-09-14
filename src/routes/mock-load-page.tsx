@@ -99,8 +99,8 @@ export const MockLoadPage = () => {
             <div className="space-y-2 text-muted-foreground">
               <p>
                 Enable your webcam and microphone to start the AI-generated mock
-                interview. The interview consists of five carefully crafted
-                questions.
+                interview. The interview consists of{" "}
+                {interview?.questions?.length || 0} carefully crafted questions.
               </p>
               <p>
                 You'll receive a personalized report with detailed feedback

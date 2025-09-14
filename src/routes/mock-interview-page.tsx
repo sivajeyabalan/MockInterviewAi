@@ -113,7 +113,8 @@ export const MockInterviewPage = () => {
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold">Interview Questions</h2>
             <p className="text-muted-foreground">
-              Answer each question thoughtfully. Take your time!
+              Answer each of the {interview?.questions?.length || 0} questions
+              thoughtfully. Take your time!
             </p>
           </div>
 

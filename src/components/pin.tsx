@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "./ui/badge";
-import { cn } from "@/lib/utils";
 import { TooltipButton } from "./tooltip-button";
 import { Eye, Newspaper, Sparkles } from "lucide-react";
 
