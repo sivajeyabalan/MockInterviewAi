@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TooltipButton } from "./tooltip-button";
-import { Volume2, VolumeX } from "lucide-react";
+import { Volume2, VolumeX, ChevronLeft, ChevronRight } from "lucide-react";
 import { RecordAnswer } from "./record-answer";
+import { Button } from "@/components/ui/button";
 
 interface QuestionSectionProps {
   questions: { question: string; answer: string }[];
@@ -15,9 +16,10 @@ export const QuestionSection = ({
 }: QuestionSectionProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isWebCam, setIsWebCam] = useState(false);
-
   const [currentSpeech, setCurrentSpeech] =
     useState<SpeechSynthesisUtterance | null>(null);
+
+  const tabsListRef = useRef<HTMLDivElement>(null);
 
   const handlePlayQuestion = (qst: string) => {
     if (isPlaying && currentSpeech) {
@@ -41,6 +43,22 @@ export const QuestionSection = ({
     }
   };
 
+  const scrollTabs = (direction: "left" | "right") => {
+    if (tabsListRef.current) {
+      const scrollAmount = 200; // Adjust scroll amount as needed
+      const currentScroll = tabsListRef.current.scrollLeft;
+      const newScroll =
+        direction === "left"
+          ? currentScroll - scrollAmount
+          : currentScroll + scrollAmount;
+
+      tabsListRef.current.scrollTo({
+        left: newScroll,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="w-full space-y-6">
       <Tabs
@@ -48,22 +66,51 @@ export const QuestionSection = ({
         className="w-full"
         orientation="vertical"
       >
-        <TabsList className="bg-muted/30 w-full flex flex-wrap items-center justify-start gap-2 p-2 rounded-xl">
-          {questions?.map((tab, i) => (
-            <TabsTrigger
-              key={tab.question}
-              value={tab.question}
-              className="text-sm font-medium px-4 py-3 rounded-lg border-0 hover:bg-background/50 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all duration-200"
+        <div className="relative">
+          {/* Navigation Buttons */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 z-10">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm"
+              onClick={() => scrollTabs("left")}
             >
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
-                  {i + 1}
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm"
+              onClick={() => scrollTabs("right")}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Scrollable Tabs List */}
+          <TabsList
+            ref={tabsListRef}
+            className="bg-muted/30 w-full flex items-center justify-start gap-2 p-2 rounded-xl overflow-x-auto scrollbar-hide"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {questions?.map((tab, i) => (
+              <TabsTrigger
+                key={tab.question}
+                value={tab.question}
+                className="text-sm font-medium px-4 py-3 rounded-lg border-0 hover:bg-background/50 data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all duration-200 whitespace-nowrap flex-shrink-0"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                    {i + 1}
+                  </div>
+                  Question {i + 1}
                 </div>
-                Question {i + 1}
-              </div>
-            </TabsTrigger>
-          ))}
-        </TabsList>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {questions?.map((tab, i) => (
           <TabsContent key={i} value={tab.question} className="space-y-6 mt-6">
