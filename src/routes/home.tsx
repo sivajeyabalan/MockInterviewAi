@@ -5,12 +5,9 @@ import { Container } from "@/components/container";
 import { Button } from "@/components/ui/button";
 import { MarqueImg } from "@/components/marquee-img";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import aiImg from "@/assets/aiImg.png";
 
 const HomePage = () => {
-  const { user } = useAuth();
-
   return (
     <div className="flex-col w-full pb-24">
       {/* Hero Section */}
@@ -42,17 +39,6 @@ const HomePage = () => {
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
-                {!user && (
-                  <Link to="/signin">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="text-lg px-8 py-6 border-2 hover:bg-primary/5"
-                    >
-                      Sign In
-                    </Button>
-                  </Link>
-                )}
               </div>
             </div>
           </div>
@@ -103,7 +89,7 @@ const HomePage = () => {
             style={{ animationDelay: "0.4s" }}
           >
             <div className="text-4xl md:text-5xl font-bold text-gradient">
-              69%
+              97%
             </div>
             <div className="text-lg text-muted-foreground font-medium">
               Success Rate
@@ -230,32 +216,12 @@ const HomePage = () => {
             interview game with our AI-powered platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            {!user ? (
-              <>
-                <Link to="/signup">
-                  <Button size="lg" className="btn-premium text-lg px-8 py-6">
-                    Get Started Free
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/signin">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="text-lg px-8 py-6 border-2"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <Link to="/generate">
-                <Button size="lg" className="btn-premium text-lg px-8 py-6">
-                  Go to Dashboard
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            )}
+            <Link to="/generate">
+              <Button size="lg" className="btn-premium text-lg px-8 py-6">
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </Container>

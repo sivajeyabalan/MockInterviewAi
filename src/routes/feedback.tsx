@@ -45,121 +45,24 @@ export const Feedback = () => {
   // Function to refresh feedbacks
   const refreshFeedbacks = useCallback(async () => {
     if (!userId || !interviewId) {
-      console.log("Missing userId or interviewId:", { userId, interviewId });
+      // Required identifiers missing; nothing to fetch
       return;
     }
 
     setIsLoading(true);
     try {
-      const querSanpRef = query(
+      const userAnswersQuery = query(
         collection(db, "userAnswers"),
         where("userId", "==", userId),
         where("mockIdRef", "==", interviewId)
       );
 
-      console.log(
-        "Refreshing feedbacks with userId:",
-        userId,
-        "interviewId:",
-        interviewId
-      );
+      const querySnap = await getDocs(userAnswersQuery);
+      const interviewData: UserAnswer[] = querySnap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as UserAnswer[];
 
-      const querySnap = await getDocs(querSanpRef);
-      console.log("Feedback query results:", querySnap.docs.length);
-
-      if (querySnap.docs.length > 0) {
-        console.log(
-          "Found documents:",
-          querySnap.docs.map((doc) => ({ id: doc.id, data: doc.data() }))
-        );
-      } else {
-        // Fallback: check if there are any user answers at all for this user
-        console.log(
-          "No results found, checking all user answers for this user..."
-        );
-        const allUserAnswersQuery = query(
-          collection(db, "userAnswers"),
-          where("userId", "==", userId)
-        );
-        const allUserAnswersSnap = await getDocs(allUserAnswersQuery);
-        console.log(
-          "All user answers for this user:",
-          allUserAnswersSnap.docs.length
-        );
-        if (allUserAnswersSnap.docs.length > 0) {
-          console.log(
-            "All user answers data:",
-            allUserAnswersSnap.docs.map((doc) => ({
-              id: doc.id,
-              data: doc.data(),
-              mockIdRef: doc.data().mockIdRef,
-              interviewId: interviewId,
-              mockIdRefMatch: doc.data().mockIdRef === interviewId,
-            }))
-          );
-
-          // Check if any answers match this interview
-          const matchingAnswers = allUserAnswersSnap.docs.filter(
-            (doc) => doc.data().mockIdRef === interviewId
-          );
-          console.log(
-            "Matching answers for this interview:",
-            matchingAnswers.length
-          );
-        }
-
-        // Also try a different approach - get all documents and filter client-side
-        console.log("Trying alternative query approach...");
-        const alternativeQuery = query(collection(db, "userAnswers"));
-        const alternativeSnap = await getDocs(alternativeQuery);
-        console.log(
-          "Total userAnswers in database:",
-          alternativeSnap.docs.length
-        );
-
-        const userAnswers = alternativeSnap.docs
-          .map((doc) => ({ id: doc.id, ...doc.data() } as UserAnswer))
-          .filter(
-            (answer: UserAnswer) =>
-              answer.userId === userId && answer.mockIdRef === interviewId
-          );
-
-        console.log("Client-side filtered answers:", userAnswers.length);
-        if (userAnswers.length > 0) {
-          console.log("Client-side filtered data:", userAnswers);
-          setFeedbacks(userAnswers as UserAnswer[]);
-          return; // Exit early if we found data
-        }
-      }
-
-      // If we still haven't found anything, try one more approach
-      console.log(
-        "Trying final fallback - getting all user answers and filtering..."
-      );
-      const finalQuery = query(collection(db, "userAnswers"));
-      const finalSnap = await getDocs(finalQuery);
-      const allAnswers = finalSnap.docs.map(
-        (doc) => ({ id: doc.id, ...doc.data() } as UserAnswer)
-      );
-      const userSpecificAnswers = allAnswers.filter(
-        (answer) => answer.userId === userId && answer.mockIdRef === interviewId
-      );
-      console.log(
-        "Final fallback found:",
-        userSpecificAnswers.length,
-        "answers"
-      );
-      if (userSpecificAnswers.length > 0) {
-        console.log("Final fallback data:", userSpecificAnswers);
-        setFeedbacks(userSpecificAnswers);
-        return;
-      }
-
-      const interviewData: UserAnswer[] = querySnap.docs.map((doc) => {
-        return { id: doc.id, ...doc.data() } as UserAnswer;
-      });
-
-      console.log("Processed feedback data:", interviewData);
       setFeedbacks(interviewData);
     } catch (error) {
       console.error("Error fetching feedbacks:", error);
